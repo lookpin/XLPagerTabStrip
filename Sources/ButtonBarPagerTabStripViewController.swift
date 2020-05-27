@@ -189,14 +189,27 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
         buttonBarView.selectItem(at: IndexPath(item: currentIndex, section: 0), animated: false, scrollPosition: [])
     }
 
+  
+    var shouldUpdateContent: Bool = true
+    
     // MARK: - Public Methods
-
+  
+    open override func updateContent() {
+        if shouldUpdateContent {
+            super.updateContent()
+        }
+    }
+  
     open override func reloadPagerTabStripView() {
-        super.reloadPagerTabStripView()
-        guard isViewLoaded else { return }
-        buttonBarView.reloadData()
-        cachedCellWidths = calculateWidths()
-        buttonBarView.moveTo(index: currentIndex, animated: false, swipeDirection: .none, pagerScroll: .yes)
+      shouldUpdateContent = false
+      super.reloadPagerTabStripView()
+      shouldUpdateContent = true
+          
+      guard isViewLoaded else { return }
+      buttonBarView.reloadData()
+      cachedCellWidths = calculateWidths()
+      updateContent()
+      buttonBarView.moveTo(index: currentIndex, animated: false, swipeDirection: .none, pagerScroll: .yes)
     }
 
     open func calculateStretchedCellWidths(_ minimumCellWidths: [CGFloat], suggestedStretchedCellWidth: CGFloat, previousNumberOfLargeCells: Int) -> CGFloat {
@@ -248,6 +261,9 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
 
     private func cellForItems(at indexPaths: [IndexPath], reloadIfNotVisible reload: Bool = true) -> [ButtonBarViewCell?] {
         let cells = indexPaths.map { buttonBarView.cellForItem(at: $0) as? ButtonBarViewCell }
+      
+        let uniqueIndexPaths = Set<IndexPath>(indexPaths)
+        guard uniqueIndexPaths.count > 1 else { return cells }
 
         if reload {
             let indexPathsToReload = cells.enumerated()
